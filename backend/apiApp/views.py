@@ -1,12 +1,13 @@
 from django.shortcuts import render
 from django.db import models
 from rest_framework.decorators import api_view
+from django.db.models import Q
 from django.contrib.auth import get_user_model
 from rest_framework import status
 from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from .models import Product, Category, Wishlist, Message, CustomUser, Chat, ProductImage
-from .serializers import ProductListSerializer, ProductSerializer, ProductDetailSerializer, CategoryListSerializer, CategoryDetailSerializer, WishlistSerializer, UserSerializer, MessageSerializer, ChatSerializer
+from .serializers import ProductListSerializer, ProductSerializer, ProductDetailSerializer, CategoryListSerializer, CategoryDetailSerializer,  UserSerializer, MessageSerializer, ChatSerializer
 
 
 User = get_user_model()
@@ -132,7 +133,7 @@ def category_detail(request, slug):
     return Response(serializer.data)
 
 
-@api_view(["DELETE"])
+@api_view(['DELETE'])
 def delete_product(request, pk):
     try:
         product = Product.objects.get(pk=pk)
@@ -228,6 +229,18 @@ def toggle_wishlist(request):
         return Response({"status": "removed"})
     
     return Response({"status": "added"})
+
+
+@api_view(['GET'])
+def product_search(request):
+    query = request.query_params.get("query") 
+    if not query:
+        return Response("No query provided", status=400)
+    
+    products = Product.objects.filter(Q(name__icontains=query) | 
+                                    Q(description__icontains=query) )
+    serializer = ProductListSerializer(products, many=True)
+    return Response(serializer.data)
 
 
 @api_view(['GET'])
